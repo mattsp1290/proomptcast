@@ -1,0 +1,83 @@
+name: "4-Player Join Test"
+description: "Test that all 4 players can successfully join a multiplayer session"
+game_file: "${GAME_FILE}"
+savestate: "states/main_menu.state"
+timeout: 300
+
+steps:
+  - action: wait
+    frame: 60
+    description: "Wait for main menu to load"
+
+  - action: screenshot
+    frame: 61
+    value: "main_menu.png"
+
+  - action: input
+    frame: 100
+    value: "P1_START"
+    description: "Player 1 presses start"
+
+  - action: wait
+    frame: 150
+
+  - action: assert
+    frame: 151
+    value: "player_count == 1"
+    description: "Verify player 1 joined"
+
+  - action: input
+    frame: 200
+    value: "P2_START"
+    description: "Player 2 presses start"
+
+  - action: wait
+    frame: 250
+
+  - action: assert
+    frame: 251
+    value: "player_count == 2"
+    description: "Verify player 2 joined"
+
+  - action: screenshot
+    frame: 252
+    value: "2players_joined.png"
+
+  - action: input
+    frame: 300
+    value: "P3_START"
+    description: "Player 3 presses start"
+
+  - action: wait
+    frame: 350
+
+  - action: assert
+    frame: 351
+    value: "player_count == 3"
+    description: "Verify player 3 joined"
+
+  - action: input
+    frame: 400
+    value: "P4_START"
+    description: "Player 4 presses start"
+
+  - action: wait
+    frame: 450
+
+  - action: assert
+    frame: 451
+    value: "player_count == 4"
+    description: "Verify all 4 players joined"
+
+  - action: screenshot
+    frame: 452
+    value: "4players_joined.png"
+
+  - action: wait
+    frame: 500
+    description: "Test complete"
+
+expected_results:
+  - "All 4 players successfully join the session"
+  - "Player indicators show correct player numbers"
+  - "No crashes or errors during join process"

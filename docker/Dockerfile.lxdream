@@ -1,0 +1,122 @@
+# Dockerfile for lxdream in CI/CD environments
+# Provides headless Dreamcast emulation for automated testing
+
+FROM ubuntu:22.04
+
+# Prevent interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install build dependencies and runtime requirements
+RUN apt-get update && apt-get install -y \
+    # Build tools
+    build-essential \
+    autoconf \
+    automake \
+    libtool \
+    pkg-config \
+    mercurial \
+    git \
+    # lxdream dependencies
+    libgtk2.0-dev \
+    libsdl2-dev \
+    libpng-dev \
+    libjpeg-dev \
+    zlib1g-dev \
+    gettext \
+    # X11 virtual framebuffer for headless operation
+    xvfb \
+    x11vnc \
+    # Additional tools
+    wget \
+    curl \
+    jq \
+    yq \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create build directory
+WORKDIR /tmp/lxdream-build
+
+# Clone and build lxdream
+RUN hg clone http://www.lxdream.org/hg/lxdream || \
+    git clone https://github.com/lxdream/lxdream.git
+
+WORKDIR /tmp/lxdream-build/lxdream
+
+# Apply patches for headless operation
+RUN echo '--- a/configure.ac\n\
+    +++ b/configure.ac\n\
+    @@ -50,7 +50,7 @@\n\
+    AC_DEFINE(HAVE_FASTCALL, [1], [Use fast register-passing calling convention])\n\
+    AC_DEFINE(HAVE_FRAME_ADDRESS, [1], [Define if the GNU __builtin_frame_address is available])\n\
+    \n\
+    -CFLAGS="$CFLAGS -fno-strict-aliasing"\n\
+    +CFLAGS="$CFLAGS -fno-strict-aliasing -Wno-deprecated-declarations"\n\
+    \n\
+    AC_ARG_ENABLE(optimized,\n\
+    AS_HELP_STRING([--disable-optimized], [Disable compile-time optimizations]),' > headless.patch && \
+    patch -p1 < headless.patch || true
+
+# Configure and build
+RUN autoreconf -fi && \
+    ./configure \
+    --prefix=/usr/local \
+    --enable-trace \
+    --enable-watch \
+    --enable-gdb-stub \
+    --with-gtk \
+    --with-sdl && \
+    make -j$(nproc) && \
+    make install
+
+# Clean up build files
+RUN rm -rf /tmp/lxdream-build
+
+# Create necessary directories
+RUN mkdir -p /root/.lxdream/save /root/.lxdream/state /root/.lxdream/screenshots
+
+# Create default configuration for CI
+RUN cat > /root/.lxdream/lxdreamrc << 'EOF'
+[global]
+fullscreen = 0
+width = 640
+height = 480
+show_fps = 0
+audio.driver = null
+video.driver = null
+gdb.enabled = 1
+gdb.port = 1234
+gdb.wait = 0
+debug.level = 1
+debug.modules =
+debug.console = 0
+path.save = /root/.lxdream/save
+path.state = /root/.lxdream/state
+path.screenshot = /root/.lxdream/screenshots
+emu.region = usa
+emu.broadcast = ntsc
+hardware.cable = vga
+EOF
+
+# Create entrypoint script
+RUN cat > /usr/local/bin/lxdream-ci << 'EOF'
+#!/bin/bash
+set -e
+
+# Start Xvfb if not already running
+if ! pgrep -x "Xvfb" > /dev/null; then
+Xvfb :99 -screen 0 640x480x24 &
+export DISPLAY=:99
+sleep 2
+fi
+
+# Run lxdream with provided arguments
+exec lxdream "$@"
+EOF
+RUN chmod +x /usr/local/bin/lxdream-ci
+
+# Set environment variables
+ENV DISPLAY=:99
+ENV DREAMCAST_CI=1
+
+# Default command
+CMD ["lxdream-ci", "--help"]

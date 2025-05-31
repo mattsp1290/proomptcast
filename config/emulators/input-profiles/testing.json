@@ -1,0 +1,100 @@
+{
+    "profile": "testing",
+    "description": "Input profile optimized for automated testing",
+    "virtual_input": {
+        "enabled": true,
+        "script_mode": true,
+        "frame_precise": true
+    },
+    "players": [
+        {
+            "id": 1,
+            "name": "Test Player 1",
+            "device": "virtual",
+            "mapping": {
+                "P1_UP": "dpad_up",
+                "P1_DOWN": "dpad_down",
+                "P1_LEFT": "dpad_left",
+                "P1_RIGHT": "dpad_right",
+                "P1_A": "button_a",
+                "P1_B": "button_b",
+                "P1_X": "button_x",
+                "P1_Y": "button_y",
+                "P1_START": "button_start",
+                "P1_L": "left_trigger",
+                "P1_R": "right_trigger",
+                "P1_ANALOG_X": "analog_left_x",
+                "P1_ANALOG_Y": "analog_left_y"
+            }
+        },
+        {
+            "id": 2,
+            "name": "Test Player 2",
+            "device": "virtual",
+            "mapping": {
+                "P2_UP": "dpad_up",
+                "P2_DOWN": "dpad_down",
+                "P2_LEFT": "dpad_left",
+                "P2_RIGHT": "dpad_right",
+                "P2_A": "button_a",
+                "P2_B": "button_b",
+                "P2_X": "button_x",
+                "P2_Y": "button_y",
+                "P2_START": "button_start",
+                "P2_L": "left_trigger",
+                "P2_R": "right_trigger",
+                "P2_ANALOG_X": "analog_left_x",
+                "P2_ANALOG_Y": "analog_left_y"
+            }
+        },
+        {
+            "id": 3,
+            "name": "Test Player 3",
+            "device": "virtual",
+            "mapping": {
+                "P3_UP": "dpad_up",
+                "P3_DOWN": "dpad_down",
+                "P3_LEFT": "dpad_left",
+                "P3_RIGHT": "dpad_right",
+                "P3_A": "button_a",
+                "P3_B": "button_b",
+                "P3_X": "button_x",
+                "P3_Y": "button_y",
+                "P3_START": "button_start",
+                "P3_L": "left_trigger",
+                "P3_R": "right_trigger",
+                "P3_ANALOG_X": "analog_left_x",
+                "P3_ANALOG_Y": "analog_left_y"
+            }
+        },
+        {
+            "id": 4,
+            "name": "Test Player 4",
+            "device": "virtual",
+            "mapping": {
+                "P4_UP": "dpad_up",
+                "P4_DOWN": "dpad_down",
+                "P4_LEFT": "dpad_left",
+                "P4_RIGHT": "dpad_right",
+                "P4_A": "button_a",
+                "P4_B": "button_b",
+                "P4_X": "button_x",
+                "P4_Y": "button_y",
+                "P4_START": "button_start",
+                "P4_L": "left_trigger",
+                "P4_R": "right_trigger",
+                "P4_ANALOG_X": "analog_left_x",
+                "P4_ANALOG_Y": "analog_left_y"
+            }
+        }
+    ],
+    "test_commands": {
+        "WAIT": "wait_frames",
+        "SCREENSHOT": "capture_screenshot",
+        "ASSERT": "validate_assertion",
+        "STATE_SAVE": "save_state",
+        "STATE_LOAD": "load_state",
+        "MEMORY_DUMP": "dump_memory",
+        "LOG": "write_log"
+    }
+}

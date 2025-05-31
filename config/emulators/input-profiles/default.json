@@ -1,0 +1,155 @@
+{
+    "profile": "default",
+    "description": "Default 4-player keyboard mapping for development",
+    "players": [
+        {
+            "id": 1,
+            "name": "Player 1",
+            "device": "keyboard",
+            "mapping": {
+                "dpad_up": "W",
+                "dpad_down": "S",
+                "dpad_left": "A",
+                "dpad_right": "D",
+                "button_a": "Space",
+                "button_b": "LeftShift",
+                "button_x": "Q",
+                "button_y": "E",
+                "button_start": "Return",
+                "left_trigger": "R",
+                "right_trigger": "F",
+                "analog_left": {
+                    "up": "W",
+                    "down": "S",
+                    "left": "A",
+                    "right": "D"
+                },
+                "analog_right": {
+                    "up": "T",
+                    "down": "G",
+                    "left": "F",
+                    "right": "H"
+                }
+            },
+            "controller": {
+                "enabled": true,
+                "type": "auto",
+                "index": 0
+            }
+        },
+        {
+            "id": 2,
+            "name": "Player 2",
+            "device": "keyboard",
+            "mapping": {
+                "dpad_up": "Up",
+                "dpad_down": "Down",
+                "dpad_left": "Left",
+                "dpad_right": "Right",
+                "button_a": "Return",
+                "button_b": "RightShift",
+                "button_x": "Period",
+                "button_y": "Slash",
+                "button_start": "RightControl",
+                "left_trigger": "Comma",
+                "right_trigger": "M",
+                "analog_left": {
+                    "up": "Up",
+                    "down": "Down",
+                    "left": "Left",
+                    "right": "Right"
+                },
+                "analog_right": {
+                    "up": "P",
+                    "down": "Semicolon",
+                    "left": "L",
+                    "right": "Quote"
+                }
+            },
+            "controller": {
+                "enabled": true,
+                "type": "auto",
+                "index": 1
+            }
+        },
+        {
+            "id": 3,
+            "name": "Player 3",
+            "device": "keyboard",
+            "mapping": {
+                "dpad_up": "I",
+                "dpad_down": "K",
+                "dpad_left": "J",
+                "dpad_right": "L",
+                "button_a": "U",
+                "button_b": "O",
+                "button_x": "7",
+                "button_y": "8",
+                "button_start": "9",
+                "left_trigger": "Y",
+                "right_trigger": "P",
+                "analog_left": {
+                    "up": "I",
+                    "down": "K",
+                    "left": "J",
+                    "right": "L"
+                },
+                "analog_right": {
+                    "up": "Num8",
+                    "down": "Num2",
+                    "left": "Num4",
+                    "right": "Num6"
+                }
+            },
+            "controller": {
+                "enabled": true,
+                "type": "auto",
+                "index": 2
+            }
+        },
+        {
+            "id": 4,
+            "name": "Player 4",
+            "device": "keyboard",
+            "mapping": {
+                "dpad_up": "Num8",
+                "dpad_down": "Num2",
+                "dpad_left": "Num4",
+                "dpad_right": "Num6",
+                "button_a": "Num0",
+                "button_b": "NumPeriod",
+                "button_x": "Num7",
+                "button_y": "Num9",
+                "button_start": "NumEnter",
+                "left_trigger": "Num1",
+                "right_trigger": "Num3",
+                "analog_left": {
+                    "up": "Num8",
+                    "down": "Num2",
+                    "left": "Num4",
+                    "right": "Num6"
+                },
+                "analog_right": {
+                    "up": "NumDivide",
+                    "down": "NumMultiply",
+                    "left": "NumMinus",
+                    "right": "NumPlus"
+                }
+            },
+            "controller": {
+                "enabled": true,
+                "type": "auto",
+                "index": 3
+            }
+        }
+    ],
+    "global_controls": {
+        "pause_emulation": "Escape",
+        "save_state": "F5",
+        "load_state": "F9",
+        "screenshot": "F12",
+        "toggle_fps": "Tab",
+        "speed_up": "Plus",
+        "slow_down": "Minus"
+    }
+}
