@@ -1,0 +1,155 @@
+name: Build and Push Dreamcast Toolchain
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docker/Dockerfile.toolchain'
+      - '.github/workflows/docker-build.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docker/Dockerfile.toolchain'
+      - '.github/workflows/docker-build.yml'
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  REGISTRY: registry.digitalocean.com
+  IMAGE_NAME: ${{ secrets.DO_REGISTRY_NAME }}/dreamcast-toolchain
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    strategy:
+      matrix:
+        platform:
+          - linux/amd64
+          - linux/arm64
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+      with:
+        platforms: all
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      with:
+        driver-opts: network=host
+        
+    - name: Log in to Digital Ocean Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ secrets.DO_REGISTRY_TOKEN }}
+        password: ${{ secrets.DO_REGISTRY_TOKEN }}
+        
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+          
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: docker
+        file: docker/Dockerfile.toolchain
+        platforms: ${{ matrix.platform }}
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha,scope=${{ matrix.platform }}
+        cache-to: type=gha,mode=max,scope=${{ matrix.platform }}
+        build-args: |
+          BUILDPLATFORM=${{ matrix.platform }}
+          TARGETPLATFORM=${{ matrix.platform }}
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Log in to Digital Ocean Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ secrets.DO_REGISTRY_TOKEN }}
+        password: ${{ secrets.DO_REGISTRY_TOKEN }}
+        
+    - name: Test Docker image
+      run: |
+        # Pull the image
+        docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+        
+        # Test basic functionality
+        docker run --rm ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest sh-elf-gcc --version
+        
+        # Test compilation with a simple program
+        cat > test.c << 'EOF'
+        #include <kos.h>
+        
+        int main(int argc, char *argv[]) {
+            printf("Hello from Dreamcast!\n");
+            return 0;
+        }
+        EOF
+        
+        # Try to compile the test program
+        docker run --rm -v $(pwd):/workspace ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+          sh -c "source \${KOS_BASE}/environ.sh && sh-elf-gcc -o test.elf test.c -lkallisti -lc"
+        
+        # Check if compilation succeeded
+        if [ -f test.elf ]; then
+          echo "✅ Compilation test passed!"
+          rm test.elf test.c
+        else
+          echo "❌ Compilation test failed!"
+          exit 1
+        fi
+        
+  create-manifest:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    
+    steps:
+    - name: Log in to Digital Ocean Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ secrets.DO_REGISTRY_TOKEN }}
+        password: ${{ secrets.DO_REGISTRY_TOKEN }}
+        
+    - name: Create and push multi-platform manifest
+      run: |
+        # Create manifest for latest tag
+        docker manifest create ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-linux-amd64 \
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest-linux-arm64
+          
+        # Push the manifest
+        docker manifest push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+        
+        # Also create a manifest with the commit SHA
+        docker manifest create ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}-linux-amd64 \
+          ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}-linux-arm64
+          
+        docker manifest push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}

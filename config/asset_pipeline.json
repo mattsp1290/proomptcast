@@ -1,0 +1,113 @@
+{
+    "version": "1.0",
+    "description": "Dreamcast asset conversion pipeline configuration",
+    "texture": {
+        "max_size": 512,
+        "min_size": 8,
+        "formats": [
+            "pvr",
+            "vq"
+        ],
+        "compression_quality": "high",
+        "mipmaps": true,
+        "power_of_2": true,
+        "default_format": "pvr",
+        "pvr_settings": {
+            "pixel_format": "RGB565",
+            "data_format": "SQUARE_TWIDDLED",
+            "global_index": false
+        },
+        "vq_settings": {
+            "codebook_size": 256,
+            "quality": "high"
+        },
+        "optimization": {
+            "auto_resize": true,
+            "compression_threshold": 128,
+            "alpha_threshold": 254
+        }
+    },
+    "audio": {
+        "format": "adpcm",
+        "default_sample_rate": 22050,
+        "max_sample_rate": 44100,
+        "channels": 1,
+        "bit_depth": 16,
+        "adpcm_settings": {
+            "loop_enabled": false,
+            "loop_start": 0,
+            "loop_end": -1
+        },
+        "optimization": {
+            "normalize": true,
+            "remove_silence": true,
+            "silence_threshold": -40
+        }
+    },
+    "model": {
+        "vertex_format": "float",
+        "index_format": "uint16",
+        "max_vertices": 65536,
+        "max_polygons": 32768,
+        "optimization": {
+            "remove_duplicates": true,
+            "optimize_cache": true,
+            "strip_normals": false,
+            "strip_uvs": false,
+            "scale_to_unit": false
+        },
+        "formats": {
+            "dcm": {
+                "description": "Dreamcast Model format",
+                "extension": ".dcm",
+                "binary": true,
+                "compressed": false
+            },
+            "obj": {
+                "description": "Wavefront OBJ (reference)",
+                "extension": ".obj",
+                "binary": false,
+                "compressed": false
+            }
+        }
+    },
+    "batch_processing": {
+        "parallel_jobs": 4,
+        "memory_limit": "1G",
+        "temp_directory": "/tmp/dc_assets",
+        "clean_temp": true,
+        "naming_convention": {
+            "lowercase": true,
+            "replace_spaces": "_",
+            "max_length": 32
+        }
+    },
+    "quality_presets": {
+        "high": {
+            "texture_quality": 1.0,
+            "audio_bitrate": 128,
+            "model_lod": 0
+        },
+        "medium": {
+            "texture_quality": 0.75,
+            "audio_bitrate": 96,
+            "model_lod": 1
+        },
+        "low": {
+            "texture_quality": 0.5,
+            "audio_bitrate": 64,
+            "model_lod": 2
+        }
+    },
+    "unity_import": {
+        "auto_detect_type": true,
+        "preserve_hierarchy": false,
+        "extract_materials": true,
+        "extract_animations": false,
+        "texture_mapping": {
+            "_MainTex": "diffuse",
+            "_BumpMap": "normal",
+            "_SpecGlossMap": "specular"
+        }
+    }
+}

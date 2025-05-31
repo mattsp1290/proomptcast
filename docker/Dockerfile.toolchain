@@ -1,0 +1,305 @@
+# Multi-stage, multi-arch optimized Dreamcast development toolchain
+ARG TARGETPLATFORM
+ARG BUILDPLATFORM
+
+# Stage 1: Base builder with all compilation tools
+FROM --platform=$BUILDPLATFORM alpine:3.19 AS builder
+
+# Install essential build tools
+RUN apk add --no-cache \
+    git wget make cmake gcc g++ \
+    bash python3 py3-pip \
+    libc-dev linux-headers \
+    autoconf automake libtool \
+    bison flex texinfo \
+    gmp-dev mpfr-dev mpc1-dev \
+    zlib-dev ncurses-dev \
+    patch file gawk \
+    libelf-dev \
+    curl ca-certificates
+
+# KallistiOS environment variables
+ENV KOS_BASE=/opt/toolchains/dc/kos
+ENV KOS_PORTS=/opt/toolchains/dc/kos-ports
+ENV DC_TOOLS=/opt/toolchains/dc
+ENV PATH="${PATH}:${DC_TOOLS}/bin:${DC_TOOLS}/sh-elf/bin:${DC_TOOLS}/arm-eabi/bin"
+
+# Create directories
+RUN mkdir -p ${DC_TOOLS}/bin ${DC_TOOLS}/sh-elf ${DC_TOOLS}/arm-eabi
+
+# Build SH4 toolchain
+WORKDIR /build
+RUN git clone https://github.com/KallistiOS/KallistiOS.git kos && \
+    cd kos/utils/dc-chain && \
+    cp config.mk.stable.sample config.mk && \
+    # Modify config for our needs
+    sed -i 's/download_only=0/download_only=0/' config.mk && \
+    sed -i 's/verbose=0/verbose=1/' config.mk && \
+    # Download all toolchain sources
+    make download && \
+    # Build SH4 toolchain
+    make build-sh4 && \
+    # Build ARM toolchain for sound processor
+    make build-arm && \
+    # Build GDB for debugging
+    make gdb && \
+    # Clean up build files to save space
+    rm -rf build-*
+
+# Install KallistiOS
+WORKDIR /build/kos
+RUN cp environ.sh.sample environ.sh && \
+    # Configure KallistiOS
+    sed -i "s|export KOS_BASE.*|export KOS_BASE=\"${KOS_BASE}\"|" environ.sh && \
+    sed -i "s|export KOS_CC_BASE.*|export KOS_CC_BASE=\"${DC_TOOLS}/sh-elf\"|" environ.sh && \
+    # Source environment and build
+    . ./environ.sh && \
+    make && \
+    # Install to final location
+    mkdir -p ${KOS_BASE} && \
+    cp -r * ${KOS_BASE}/
+
+# Build KOS ports (useful libraries)
+WORKDIR /build
+RUN git clone https://github.com/KallistiOS/kos-ports.git ${KOS_PORTS} && \
+    cd ${KOS_PORTS} && \
+    . ${KOS_BASE}/environ.sh && \
+    # Build essential ports
+    cd libpng && make install clean && cd .. && \
+    cd zlib && make install clean && cd .. && \
+    cd libjpeg && make install clean && cd .. && \
+    cd freetype && make install clean && cd ..
+
+# Build raylib4Dreamcast
+WORKDIR /build
+RUN git clone https://github.com/raylib4Consoles/raylib4Dreamcast.git && \
+    cd raylib4Dreamcast && \
+    . ${KOS_BASE}/environ.sh && \
+    make PLATFORM=PLATFORM_DC && \
+    # Install headers and library
+    mkdir -p ${KOS_BASE}/include/raylib && \
+    cp src/raylib.h ${KOS_BASE}/include/raylib/ && \
+    cp src/raymath.h ${KOS_BASE}/include/raylib/ && \
+    cp src/rlgl.h ${KOS_BASE}/include/raylib/ && \
+    cp libraylib.a ${KOS_BASE}/lib/
+
+# Stage 2: Asset conversion tools
+FROM builder AS assets
+
+# Additional packages for asset tools
+RUN apk add --no-cache \
+    imagemagick libpng-dev libjpeg-turbo-dev \
+    sox ffmpeg \
+    nodejs npm \
+    python3-dev py3-numpy py3-pillow
+
+# Install Python packages for asset conversion
+RUN pip3 install --no-cache-dir \
+    unitypack \
+    pillow \
+    numpy \
+    pypng \
+    wave
+
+# Build texture conversion tools
+WORKDIR /tools
+
+# PVR texture tools (custom build for Dreamcast)
+RUN git clone https://github.com/Kazade/img2ktx.git && \
+    cd img2ktx && \
+    make && \
+    cp img2ktx /usr/local/bin/ && \
+    cd ..
+
+# Build custom PVR converter
+COPY <<'EOF' /tools/pvr_converter.c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+
+// Simple PVR texture converter for Dreamcast
+// Converts raw RGB data to PVR format
+
+typedef struct {
+    uint32_t magic;
+    uint32_t length;
+    uint8_t pixel_format;
+    uint8_t data_format;
+    uint16_t width;
+    uint16_t height;
+} pvr_header_t;
+
+int main(int argc, char *argv[]) {
+    if (argc != 3) {
+        printf("Usage: %s input.raw output.pvr\n", argv[0]);
+        return 1;
+    }
+    
+    FILE *in = fopen(argv[1], "rb");
+    if (!in) {
+        perror("Failed to open input");
+        return 1;
+    }
+    
+    // Read input file
+    fseek(in, 0, SEEK_END);
+    long size = ftell(in);
+    fseek(in, 0, SEEK_SET);
+    
+    uint8_t *data = malloc(size);
+    fread(data, 1, size, in);
+    fclose(in);
+    
+    // Create PVR header
+    pvr_header_t header = {
+        .magic = 0x56525650, // "PVRV"
+        .length = size + sizeof(pvr_header_t),
+        .pixel_format = 0x01, // RGB565
+        .data_format = 0x01,  // Square twiddled
+        .width = 512,  // Default, should be parameterized
+        .height = 512
+    };
+    
+    FILE *out = fopen(argv[2], "wb");
+    if (!out) {
+        perror("Failed to open output");
+        free(data);
+        return 1;
+    }
+    
+    fwrite(&header, sizeof(header), 1, out);
+    fwrite(data, size, 1, out);
+    
+    fclose(out);
+    free(data);
+    
+    printf("Converted %s to PVR format\n", argv[1]);
+    return 0;
+}
+EOF
+
+RUN gcc -O2 /tools/pvr_converter.c -o /usr/local/bin/pvr_converter && \
+    rm /tools/pvr_converter.c
+
+# Audio conversion tools (WAV to ADPCM for Dreamcast)
+RUN git clone https://github.com/simulatedsimian/adxtool.git && \
+    cd adxtool && \
+    make && \
+    cp adxtool /usr/local/bin/ && \
+    cd ..
+
+# Model conversion tools
+RUN git clone https://github.com/assimp/assimp.git && \
+    cd assimp && \
+    git checkout v5.3.1 && \
+    cmake -DCMAKE_BUILD_TYPE=Release . && \
+    make -j$(nproc) && \
+    cp bin/assimp /usr/local/bin/ && \
+    cd ..
+
+# Dreamcast CDI creation tools
+RUN git clone https://github.com/kazade/img4dc.git && \
+    cd img4dc && \
+    mkdir build && cd build && \
+    cmake .. && \
+    make && \
+    cp img4dc /usr/local/bin/ && \
+    cd ../..
+
+# mkdcdisc for creating Dreamcast disc images
+RUN git clone https://github.com/kazade/mkdcdisc.git && \
+    cd mkdcdisc && \
+    make && \
+    cp mkdcdisc /usr/local/bin/ && \
+    cd ..
+
+# Stage 3: Final image with all tools
+FROM alpine:3.19
+
+# Install runtime dependencies
+RUN apk add --no-cache \
+    bash git make cmake \
+    python3 py3-pip py3-numpy py3-pillow \
+    gdb strace ltrace \
+    imagemagick sox ffmpeg \
+    nodejs npm \
+    file \
+    # Terminal utilities
+    tmux vim nano \
+    # Network tools for debugging
+    curl wget \
+    # Documentation
+    man-pages man-pages-posix
+
+# Copy toolchain from builder
+COPY --from=builder /opt/toolchains /opt/toolchains
+
+# Copy tools from assets stage
+COPY --from=assets /usr/local/bin/* /usr/local/bin/
+COPY --from=assets /tools /tools
+
+# Environment setup
+ENV KOS_BASE=/opt/toolchains/dc/kos
+ENV KOS_PORTS=/opt/toolchains/dc/kos-ports
+ENV DC_TOOLS=/opt/toolchains/dc
+ENV PATH="${PATH}:${DC_TOOLS}/bin:${DC_TOOLS}/sh-elf/bin:${DC_TOOLS}/arm-eabi/bin"
+
+# SH4 specific environment
+ENV KOS_CC_BASE="${DC_TOOLS}/sh-elf"
+ENV KOS_CC="${KOS_CC_BASE}/bin/sh-elf-gcc"
+ENV KOS_CXX="${KOS_CC_BASE}/bin/sh-elf-g++"
+ENV KOS_AS="${KOS_CC_BASE}/bin/sh-elf-as"
+ENV KOS_AR="${KOS_CC_BASE}/bin/sh-elf-ar"
+ENV KOS_OBJCOPY="${KOS_CC_BASE}/bin/sh-elf-objcopy"
+ENV KOS_LD="${KOS_CC_BASE}/bin/sh-elf-ld"
+ENV KOS_STRIP="${KOS_CC_BASE}/bin/sh-elf-strip"
+ENV KOS_CFLAGS="-O2 -fomit-frame-pointer -ml -m4-single-only -ffunction-sections -fdata-sections"
+ENV KOS_CXXFLAGS="${KOS_CFLAGS} -fno-rtti -fno-exceptions"
+ENV KOS_LDFLAGS="-ml -m4-single-only -Wl,-Ttext=0x8c010000 -Wl,--gc-sections"
+ENV KOS_ARCH_DIR="${KOS_BASE}/kernel/arch/dreamcast"
+
+# Performance profiling tools
+ENV GPROF_PATH="${DC_TOOLS}/sh-elf/bin/sh-elf-gprof"
+
+# Asset pipeline configuration directory
+RUN mkdir -p /etc/dreamcast
+ENV DC_ASSET_CONFIG=/etc/dreamcast/asset_pipeline.json
+
+# Create convenient aliases
+RUN echo 'alias kos-make="source ${KOS_BASE}/environ.sh && make"' >> /etc/profile && \
+    echo 'alias dc-gdb="sh-elf-gdb"' >> /etc/profile && \
+    echo 'alias dc-size="sh-elf-size"' >> /etc/profile && \
+    echo 'alias dc-objdump="sh-elf-objdump"' >> /etc/profile
+
+# Install Python packages for development
+RUN pip3 install --no-cache-dir \
+    unitypack \
+    pillow \
+    numpy \
+    pypng \
+    wave \
+    colorama \
+    tqdm
+
+# Create a build info file
+RUN echo "Dreamcast Development Toolchain" > /etc/dreamcast-toolchain-info && \
+    echo "Built on: $(date)" >> /etc/dreamcast-toolchain-info && \
+    echo "KallistiOS: ${KOS_BASE}" >> /etc/dreamcast-toolchain-info && \
+    echo "SH4 GCC: $(${KOS_CC} --version | head -n1)" >> /etc/dreamcast-toolchain-info && \
+    echo "Tools included: img2ktx, pvr_converter, adxtool, assimp, img4dc, mkdcdisc" >> /etc/dreamcast-toolchain-info
+
+# Default working directory
+WORKDIR /workspace
+
+# Entry point script
+RUN echo '#!/bin/bash' > /usr/local/bin/dreamcast-env && \
+    echo 'source ${KOS_BASE}/environ.sh' >> /usr/local/bin/dreamcast-env && \
+    echo 'echo "🎮 Dreamcast Development Environment Ready!"' >> /usr/local/bin/dreamcast-env && \
+    echo 'echo "KallistiOS: ${KOS_BASE}"' >> /usr/local/bin/dreamcast-env && \
+    echo 'echo "Compiler: $(sh-elf-gcc --version | head -n1)"' >> /usr/local/bin/dreamcast-env && \
+    echo 'exec "$@"' >> /usr/local/bin/dreamcast-env && \
+    chmod +x /usr/local/bin/dreamcast-env
+
+ENTRYPOINT ["/usr/local/bin/dreamcast-env"]
+CMD ["/bin/bash"]

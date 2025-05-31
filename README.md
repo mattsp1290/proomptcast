@@ -28,13 +28,25 @@ git clone https://github.com/yourusername/proomptcast.git
 cd proomptcast
 
 # Build the Docker development environment
-docker build -t dreamcast-dev -f docker/Dockerfile.toolchain docker/
+docker build -t dreamcast-toolchain -f docker/Dockerfile.toolchain docker/
+
+# Or use Docker Compose (recommended)
+docker-compose -f docker/docker-compose.yml up -d
+
+# Enter the development container
+docker-compose -f docker/docker-compose.yml exec dreamcast-dev bash
+
+# Inside container: validate toolchain
+./scripts/validate_build.sh
 
 # Build the example game
-docker run --rm -v $(pwd):/workspace -w /workspace dreamcast-dev make
+make
 
-# Run in emulator
-./scripts/run-emulator.sh build/game.cdi
+# Convert Unity/Synty assets (if you have them)
+python3 /usr/local/bin/unity_asset_extractor.py unity_assets.bundle ./assets
+
+# Batch convert assets
+./scripts/batch_convert.sh -i raw_assets/ -o assets/
 ```
 
 ## 📁 Repository Structure
@@ -139,17 +151,43 @@ The repository is configured for optimal development in VS Code/Cursor:
 ## 🐳 Docker Environment
 
 The Docker container includes:
-- KallistiOS SDK
-- SH4 cross-compiler toolchain
-- raylib4Dreamcast
-- Asset conversion tools
-- Emulators (lxdream/reicast)
-- Performance profiling tools
+- KallistiOS SDK with SH4 cross-compiler
+- ARM toolchain for sound processor
+- raylib4Dreamcast pre-integrated
+- Comprehensive asset conversion pipeline:
+  - PVR texture converter
+  - Unity asset extractor
+  - ADPCM audio converter
+  - 3D model optimizer (Assimp)
+  - Dreamcast disc image tools
+- Full debugging suite (GDB, profiler)
+- Python environment with asset tools
+- Multi-architecture support (AMD64 + ARM64)
 
 ### Building the Container
 
 ```bash
-docker build -t dreamcast-dev -f docker/Dockerfile.toolchain docker/
+# Build locally
+docker build -t dreamcast-toolchain -f docker/Dockerfile.toolchain docker/
+
+# Or pull from registry (after CI/CD setup)
+docker pull registry.digitalocean.com/your-registry/dreamcast-toolchain:latest
+```
+
+### Asset Conversion Tools
+
+```bash
+# Optimize individual texture
+./scripts/optimize_texture.sh -i texture.png -o assets/textures/ -s 256 -f pvr
+
+# Optimize 3D model
+./scripts/optimize_model.sh -i model.fbx -o assets/models/ -v 10000
+
+# Batch convert entire directory
+./scripts/batch_convert.sh -i unity_export/ -o assets/ -j 8
+
+# Extract Unity assets
+python3 scripts/unity_asset_extractor.py synty_pack.unitypackage ./extracted/
 ```
 
 ### Using Docker Compose

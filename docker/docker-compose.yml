@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  dreamcast-dev:
+    image: dreamcast-toolchain:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.toolchain
+      args:
+        BUILDPLATFORM: ${BUILDPLATFORM:-linux/amd64}
+        TARGETPLATFORM: ${TARGETPLATFORM:-linux/amd64}
+    container_name: dreamcast-dev
+    volumes:
+      # Mount the entire project directory
+      - ..:/workspace
+      # Preserve build cache between container restarts
+      - dreamcast-build-cache:/workspace/.cache
+      # Share host's .gitconfig for version control
+      - ~/.gitconfig:/root/.gitconfig:ro
+      # Optional: Share SSH keys for git operations
+      - ~/.ssh:/root/.ssh:ro
+    working_dir: /workspace
+    environment:
+      # Terminal settings for better interaction
+      - TERM=xterm-256color
+      - COLORTERM=truecolor
+      # Build environment
+      - DREAMCAST_BUILD_TYPE=${BUILD_TYPE:-Release}
+      - DREAMCAST_VERBOSE=${VERBOSE:-0}
+    command: /bin/bash
+    stdin_open: true
+    tty: true
+    networks:
+      - dreamcast-network
+
+  # Optional: Dreamcast emulator service for testing
+  dreamcast-emulator:
+    image: redream/redream:latest
+    container_name: dreamcast-emulator
+    profiles:
+      - emulator
+    volumes:
+      - ../build:/roms:ro
+      - dreamcast-saves:/saves
+    environment:
+      - DISPLAY=${DISPLAY}
+    devices:
+      - /dev/dri:/dev/dri
+    networks:
+      - dreamcast-network
+    depends_on:
+      - dreamcast-dev
+
+  # Optional: Asset server for development
+  asset-server:
+    image: nginx:alpine
+    container_name: dreamcast-assets
+    profiles:
+      - dev-server
+    volumes:
+      - ../assets:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8080:80"
+    networks:
+      - dreamcast-network
+
+volumes:
+  dreamcast-build-cache:
+    driver: local
+  dreamcast-saves:
+    driver: local
+
+networks:
+  dreamcast-network:
+    driver: bridge
+
+# Usage examples:
+#
+# Start development environment:
+#   docker-compose up -d
+#
+# Enter development container:
+#   docker-compose exec dreamcast-dev bash
+#
+# Build your project:
+#   docker-compose exec dreamcast-dev make
+#
+# Run with emulator profile:
+#   docker-compose --profile emulator up -d
+#
+# Start asset server:
+#   docker-compose --profile dev-server up -d
+#
+# Stop all services:
+#   docker-compose down
+#
+# Clean up everything including volumes:
+#   docker-compose down -v
