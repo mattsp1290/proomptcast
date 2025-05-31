@@ -1,0 +1,368 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Game",
+            "type": "shell",
+            "command": "docker",
+            "args": [
+                "run",
+                "--rm",
+                "-v",
+                "${workspaceFolder}:/workspace",
+                "-w",
+                "/workspace",
+                "dreamcast-dev",
+                "make"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": {
+                "owner": "cpp",
+                "fileLocation": [
+                    "relative",
+                    "${workspaceFolder}"
+                ],
+                "pattern": {
+                    "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5
+                }
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            }
+        },
+        {
+            "label": "Clean Build",
+            "type": "shell",
+            "command": "docker",
+            "args": [
+                "run",
+                "--rm",
+                "-v",
+                "${workspaceFolder}:/workspace",
+                "-w",
+                "/workspace",
+                "dreamcast-dev",
+                "make",
+                "clean"
+            ],
+            "group": "build"
+        },
+        {
+            "label": "Create CDI Image",
+            "type": "shell",
+            "command": "docker",
+            "args": [
+                "run",
+                "--rm",
+                "-v",
+                "${workspaceFolder}:/workspace",
+                "-w",
+                "/workspace",
+                "dreamcast-dev",
+                "./scripts/create-iso.sh"
+            ],
+            "dependsOn": [
+                "Build Game"
+            ],
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Run in Emulator",
+            "type": "shell",
+            "command": "./scripts/run-emulator.sh",
+            "args": [
+                "${workspaceFolder}/build/game.cdi"
+            ],
+            "dependsOn": [
+                "Create CDI Image"
+            ],
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new"
+            },
+            "problemMatcher": []
+        },
+        {
+            "label": "Debug in Emulator",
+            "type": "shell",
+            "command": "./scripts/run-emulator.sh",
+            "args": [
+                "--debug",
+                "${workspaceFolder}/build/game.elf"
+            ],
+            "dependsOn": [
+                "Build Game"
+            ],
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "Profile Performance",
+            "type": "shell",
+            "command": "docker",
+            "args": [
+                "run",
+                "--rm",
+                "-v",
+                "${workspaceFolder}:/workspace",
+                "-w",
+                "/workspace",
+                "dreamcast-dev",
+                "./scripts/profile.sh"
+            ],
+            "dependsOn": [
+                "Build Game"
+            ],
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "Check Memory Usage",
+            "type": "shell",
+            "command": "docker",
+            "args": [
+                "run",
+                "--rm",
+                "-v",
+                "${workspaceFolder}:/workspace",
+                "-w",
+                "/workspace",
+                "dreamcast-dev",
+                "sh-elf-size",
+                "-A",
+                "build/game.elf"
+            ],
+            "dependsOn": [
+                "Build Game"
+            ],
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "Convert Assets",
+            "type": "shell",
+            "command": "docker",
+            "args": [
+                "run",
+                "--rm",
+                "-v",
+                "${workspaceFolder}:/workspace",
+                "-w",
+                "/workspace",
+                "dreamcast-dev",
+                "./scripts/convert-assets.sh"
+            ],
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Test 2 Players",
+            "type": "shell",
+            "command": "./scripts/run-emulator.sh",
+            "args": [
+                "--players",
+                "2",
+                "${workspaceFolder}/build/game.cdi"
+            ],
+            "dependsOn": [
+                "Create CDI Image"
+            ],
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "Test 4 Players",
+            "type": "shell",
+            "command": "./scripts/run-emulator.sh",
+            "args": [
+                "--players",
+                "4",
+                "${workspaceFolder}/build/game.cdi"
+            ],
+            "dependsOn": [
+                "Create CDI Image"
+            ],
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "Deploy to Dreamcast",
+            "type": "shell",
+            "command": "./scripts/deploy-dc.sh",
+            "args": [
+                "${input:dcIPAddress}",
+                "${workspaceFolder}/build/game.elf"
+            ],
+            "dependsOn": [
+                "Build Game"
+            ],
+            "group": "none",
+            "problemMatcher": []
+        },
+        {
+            "label": "Monitor Performance",
+            "type": "shell",
+            "command": "docker",
+            "args": [
+                "run",
+                "--rm",
+                "-it",
+                "-v",
+                "${workspaceFolder}:/workspace",
+                "-v",
+                "/Users/punk1290/git/local-otel:/otel",
+                "-w",
+                "/workspace",
+                "--network",
+                "host",
+                "dreamcast-dev",
+                "./scripts/monitor-performance.sh"
+            ],
+            "group": "test",
+            "problemMatcher": [],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "dedicated"
+            }
+        },
+        {
+            "label": "Generate Documentation",
+            "type": "shell",
+            "command": "docker",
+            "args": [
+                "run",
+                "--rm",
+                "-v",
+                "${workspaceFolder}:/workspace",
+                "-w",
+                "/workspace",
+                "dreamcast-dev",
+                "doxygen",
+                "Doxyfile"
+            ],
+            "group": "none",
+            "problemMatcher": []
+        },
+        {
+            "label": "Run Unit Tests",
+            "type": "shell",
+            "command": "docker",
+            "args": [
+                "run",
+                "--rm",
+                "-v",
+                "${workspaceFolder}:/workspace",
+                "-w",
+                "/workspace",
+                "dreamcast-dev",
+                "make",
+                "test"
+            ],
+            "group": "test",
+            "problemMatcher": []
+        },
+        {
+            "label": "Lint Code",
+            "type": "shell",
+            "command": "docker",
+            "args": [
+                "run",
+                "--rm",
+                "-v",
+                "${workspaceFolder}:/workspace",
+                "-w",
+                "/workspace",
+                "dreamcast-dev",
+                "cppcheck",
+                "--enable=all",
+                "--suppress=missingIncludeSystem",
+                "--inline-suppr",
+                "src/"
+            ],
+            "group": "test",
+            "problemMatcher": {
+                "owner": "cppcheck",
+                "fileLocation": [
+                    "relative",
+                    "${workspaceFolder}"
+                ],
+                "pattern": {
+                    "regexp": "^\\[(.*):(\\d+)\\]:\\s+(.*)$",
+                    "file": 1,
+                    "line": 2,
+                    "message": 3
+                }
+            }
+        },
+        {
+            "label": "Build Docker Image",
+            "type": "shell",
+            "command": "docker",
+            "args": [
+                "build",
+                "-t",
+                "dreamcast-dev",
+                "-f",
+                "docker/Dockerfile.toolchain",
+                "docker/"
+            ],
+            "group": "none",
+            "problemMatcher": []
+        },
+        {
+            "label": "Start Development Container",
+            "type": "shell",
+            "command": "docker-compose",
+            "args": [
+                "-f",
+                "docker/docker-compose.yml",
+                "up",
+                "-d"
+            ],
+            "group": "none",
+            "problemMatcher": []
+        },
+        {
+            "label": "Stop Development Container",
+            "type": "shell",
+            "command": "docker-compose",
+            "args": [
+                "-f",
+                "docker/docker-compose.yml",
+                "down"
+            ],
+            "group": "none",
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "dcIPAddress",
+            "description": "Dreamcast IP Address (for BBA/LAN adapter)",
+            "default": "192.168.1.100",
+            "type": "promptString"
+        }
+    ]
+}

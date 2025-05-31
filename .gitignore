@@ -1,6 +1,9 @@
 # Prerequisites
 *.d
 
+# proompts
+proompts/
+
 # Compiled Object files
 *.slo
 *.lo
