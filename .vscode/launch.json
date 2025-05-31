@@ -1,0 +1,161 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Dreamcast (Emulator)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/game.elf",
+            "args": [],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}",
+            "environment": [
+                {
+                    "name": "KOS_BASE",
+                    "value": "/opt/toolchains/dc/kos"
+                }
+            ],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "/opt/toolchains/dc/sh-elf/bin/sh-elf-gdb",
+            "miDebuggerServerAddress": "localhost:1234",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set architecture to SH4",
+                    "text": "set architecture sh4",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "Load symbol file",
+                    "text": "file ${workspaceFolder}/build/game.elf",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "Set remote target",
+                    "text": "target remote localhost:1234",
+                    "ignoreFailures": false
+                }
+            ],
+            "customLaunchSetupCommands": [],
+            "launchCompleteCommand": "exec-run",
+            "preLaunchTask": "Debug in Emulator",
+            "logging": {
+                "moduleLoad": false,
+                "trace": false,
+                "engineLogging": false,
+                "programOutput": true,
+                "exceptions": true
+            }
+        },
+        {
+            "name": "Debug Dreamcast (Hardware via BBA)",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/game.elf",
+            "args": [],
+            "stopAtEntry": true,
+            "cwd": "${workspaceFolder}",
+            "environment": [
+                {
+                    "name": "KOS_BASE",
+                    "value": "/opt/toolchains/dc/kos"
+                }
+            ],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "miDebuggerPath": "/opt/toolchains/dc/sh-elf/bin/sh-elf-gdb",
+            "miDebuggerServerAddress": "${input:dcIPAddress}:2159",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set architecture to SH4",
+                    "text": "set architecture sh4",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "Load symbol file",
+                    "text": "file ${workspaceFolder}/build/game.elf",
+                    "ignoreFailures": false
+                },
+                {
+                    "description": "Connect to hardware",
+                    "text": "target remote ${input:dcIPAddress}:2159",
+                    "ignoreFailures": false
+                }
+            ],
+            "preLaunchTask": "Deploy to Dreamcast",
+            "logging": {
+                "moduleLoad": false,
+                "trace": false,
+                "engineLogging": false,
+                "programOutput": true,
+                "exceptions": true
+            }
+        },
+        {
+            "name": "Debug Core Dump",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/game.elf",
+            "coreDumpPath": "${workspaceFolder}/core.dump",
+            "cwd": "${workspaceFolder}",
+            "MIMode": "gdb",
+            "miDebuggerPath": "/opt/toolchains/dc/sh-elf/bin/sh-elf-gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set architecture to SH4",
+                    "text": "set architecture sh4",
+                    "ignoreFailures": false
+                }
+            ]
+        },
+        {
+            "name": "Attach to Running Process",
+            "type": "cppdbg",
+            "request": "attach",
+            "program": "${workspaceFolder}/build/game.elf",
+            "processId": "${command:pickProcess}",
+            "MIMode": "gdb",
+            "miDebuggerPath": "/opt/toolchains/dc/sh-elf/bin/sh-elf-gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ],
+    "inputs": [
+        {
+            "id": "dcIPAddress",
+            "type": "promptString",
+            "description": "Dreamcast IP Address (BBA/LAN)",
+            "default": "192.168.1.100"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Debug All Players",
+            "configurations": [
+                "Debug Dreamcast (Emulator)"
+            ],
+            "preLaunchTask": "Test 4 Players",
+            "stopAll": true
+        }
+    ]
+}

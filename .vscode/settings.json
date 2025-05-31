@@ -27,13 +27,14 @@
     "C_Cpp.default.cStandard": "c99",
     "C_Cpp.default.cppStandard": "c++11",
     "C_Cpp.errorSquiggles": "enabled",
-    
-    "editor.rulers": [80, 100],
+    "editor.rulers": [
+        80,
+        100
+    ],
     "editor.tabSize": 4,
     "editor.insertSpaces": true,
     "editor.formatOnSave": true,
     "editor.formatOnPaste": false,
-    
     "files.exclude": {
         "**/*.o": true,
         "**/*.elf": true,
@@ -41,16 +42,13 @@
         "build/": false,
         "romdisk/": false
     },
-    
     "terminal.integrated.env.linux": {
         "KOS_BASE": "/opt/toolchains/dc/kos",
         "KOS_PORTS": "/opt/toolchains/dc/kos-ports",
         "DC_TOOLS": "/opt/toolchains/dc/bin",
         "PATH": "${env:PATH}:/opt/toolchains/dc/bin:/opt/toolchains/dc/sh-elf/bin"
     },
-    
     "docker.defaultRegistryPath": "dreamcast-dev",
-    
     "cSpell.words": [
         "Dreamcast",
         "KallistiOS",
@@ -65,9 +63,124 @@
         "pvr",
         "vmu",
         "maple",
-        "gdrom"
+        "gdrom",
+        "Hitachi",
+        "SH4",
+        "memalign",
+        "mallinfo",
+        "dcache",
+        "inval",
+        "txr",
+        "prim",
+        "AABB",
+        "gamepad",
+        "ltrig",
+        "rtrig",
+        "joyx",
+        "joyy",
+        "twiddled",
+        "bilinear",
+        "opaque",
+        "translucent",
+        "punchthrough",
+        "prefetch",
+        "dcload",
+        "mkdcdisc",
+        "objdump",
+        "cppcheck",
+        "doxygen",
+        "BBA",
+        "CDI",
+        "ISO",
+        "ELF",
+        "PROF",
+        "PERF",
+        "OPTIMIZE",
+        "FIXME",
+        "struct",
+        "typedef",
+        "inline",
+        "uint",
+        "int",
+        "bool",
+        "false",
+        "true",
+        "NULL",
+        "memset",
+        "sprintf",
+        "printf",
+        "fopen",
+        "fread",
+        "fclose",
+        "malloc",
+        "free",
+        "sizeof",
+        "assert",
+        "framebuffer",
+        "viewport",
+        "frustum",
+        "culling",
+        "batching",
+        "sprites",
+        "texture",
+        "vertex",
+        "polygon",
+        "renderer",
+        "controller",
+        "input",
+        "analog",
+        "trigger",
+        "button",
+        "entity",
+        "component",
+        "pool",
+        "allocate",
+        "deallocate",
+        "collision",
+        "physics",
+        "velocity",
+        "position",
+        "rotation",
+        "scale",
+        "transform",
+        "animation",
+        "frame",
+        "timer",
+        "microseconds",
+        "milliseconds",
+        "nanoseconds",
+        "profiler",
+        "benchmark",
+        "optimize",
+        "cache",
+        "alignment",
+        "padding",
+        "bitfield",
+        "bitmask",
+        "flags",
+        "enum",
+        "union",
+        "const",
+        "static",
+        "extern",
+        "volatile",
+        "register",
+        "restrict",
+        "attribute",
+        "aligned",
+        "packed",
+        "unused",
+        "deprecated",
+        "noreturn",
+        "noinline",
+        "always",
+        "inline",
+        "fastcall",
+        "cdecl",
+        "stdcall",
+        "thiscall",
+        "vectorcall"
     ],
-    
     "search.exclude": {
         "**/build": true,
         "**/romdisk/*.o": true,
@@ -76,24 +189,19 @@
         "**/*.cdi": true,
         "**/*.iso": true
     },
-    
     "files.watcherExclude": {
         "**/build/**": true,
         "**/*.cdi": true,
         "**/*.iso": true
     },
-    
     "[c]": {
         "editor.defaultFormatter": "ms-vscode.cpptools"
     },
-    
     "[cpp]": {
         "editor.defaultFormatter": "ms-vscode.cpptools"
     },
-    
     "cmake.configureOnOpen": false,
     "cmake.buildDirectory": "${workspaceFolder}/build",
-    
     "todo-tree.regex.regex": "(//|#|<!--|;|/\\*|^|^\\s*(-|\\d+.))\\s*($TAGS)",
     "todo-tree.general.tags": [
         "TODO",
@@ -105,19 +213,113 @@
         "MEMORY",
         "NOTE"
     ],
-    
     "cursor.cpp.includePath": [
         "${workspaceFolder}/src/**",
         "${workspaceFolder}/include/**",
         "/opt/toolchains/dc/kos/include",
         "/opt/toolchains/dc/kos/addons/include"
     ],
-    
     "cursor.cpp.compilerPath": "/opt/toolchains/dc/sh-elf/bin/sh-elf-gcc",
-    
     "github.copilot.enable": {
         "*": true,
         "yaml": true,
         "markdown": true
-    }
+    },
+    "telemetry.telemetryLevel": "off",
+    "statusBar.items": [
+        "dreamcast.memoryUsage",
+        "dreamcast.fps",
+        "dreamcast.buildStatus"
+    ],
+    "dreamcast.performance.enabled": true,
+    "dreamcast.performance.otelEndpoint": "http://localhost:4317",
+    "dreamcast.performance.otelPath": "/Users/punk1290/git/local-otel",
+    "dreamcast.performance.showInStatusBar": true,
+    "dreamcast.performance.warnThreshold": {
+        "frameTime": 16.67,
+        "memoryUsage": 14680064,
+        "entityCount": 80
+    },
+    "problemMatcher": [
+        {
+            "name": "dreamcast-memory",
+            "owner": "dreamcast",
+            "fileLocation": [
+                "relative",
+                "${workspaceFolder}"
+            ],
+            "pattern": {
+                "regexp": "^MEMORY WARNING: (.*) exceeds (\\d+) KB limit$",
+                "message": 1,
+                "severity": "warning"
+            }
+        },
+        {
+            "name": "dreamcast-performance",
+            "owner": "dreamcast",
+            "fileLocation": [
+                "relative",
+                "${workspaceFolder}"
+            ],
+            "pattern": {
+                "regexp": "^PERF WARNING: (.*) took (\\d+\\.\\d+) ms \\(target: (\\d+\\.\\d+) ms\\)$",
+                "message": 1,
+                "severity": "warning"
+            }
+        }
+    ],
+    "terminal.integrated.profiles.linux": {
+        "Dreamcast Shell": {
+            "path": "/bin/bash",
+            "args": [
+                "-c",
+                "docker run -it --rm -v ${workspaceFolder}:/workspace -w /workspace dreamcast-dev /bin/bash"
+            ],
+            "icon": "terminal-bash"
+        }
+    },
+    "terminal.integrated.defaultProfile.linux": "Dreamcast Shell",
+    "debug.console.fontSize": 12,
+    "debug.console.fontFamily": "'Cascadia Code', Consolas, 'Courier New', monospace",
+    "debug.console.wordWrap": false,
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true,
+    "editor.minimap.enabled": true,
+    "editor.minimap.renderCharacters": false,
+    "editor.minimap.maxColumn": 80,
+    "workbench.colorCustomizations": {
+        "statusBar.background": "#1a1a1a",
+        "statusBar.foreground": "#ffffff",
+        "statusBar.debuggingBackground": "#ff6600",
+        "statusBar.debuggingForeground": "#ffffff"
+    },
+    "customTasks.statusbar": [
+        {
+            "label": "$(database) Build DC",
+            "task": "Build Game",
+            "tooltip": "Build Dreamcast Game"
+        },
+        {
+            "label": "$(play) Run DC",
+            "task": "Run in Emulator",
+            "tooltip": "Run in Dreamcast Emulator"
+        },
+        {
+            "label": "$(graph) Profile",
+            "task": "Monitor Performance",
+            "tooltip": "Monitor Performance Metrics"
+        }
+    ],
+    "C_Cpp.default.compilerArgs": [
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-Wno-unused-parameter",
+        "-Wno-unused-variable",
+        "-fno-exceptions",
+        "-fno-rtti",
+        "-ffast-math",
+        "-O2"
+    ]
 }
